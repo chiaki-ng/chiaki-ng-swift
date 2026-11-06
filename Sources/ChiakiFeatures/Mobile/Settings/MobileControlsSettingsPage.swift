@@ -201,12 +201,12 @@ private struct MobileControlsForm: View {
             title,
             footer: [lead, note].compactMap(\.self).joined(separator: " ")
         ) {
-            MobileValueRow("Button Mapping", value: store.editingPreset.name) {
+            MobileValueRow("Button Mapping", value: chiakiLocalizedPresetName(store.editingPreset.name)) {
                 store.send(.openMapping(store.editing))
             }
             MobilePickerRow("Preset", selection: presetSelection) {
                 ForEach(store.draft.presets) { preset in
-                    Text(preset.name).tag(preset.id)
+                    Text(chiakiLocalizedPresetName(preset.name)).tag(preset.id)
                 }
             }
             if case .player(let player) = store.editing, store.draft.playerPreset(player) != nil {
@@ -456,7 +456,7 @@ private struct MobileControlsForm: View {
         Menu {
             Picker("Preset", selection: presetSelection) {
                 ForEach(store.draft.presets) { preset in
-                    Text(preset.name).tag(preset.id)
+                    Text(chiakiLocalizedPresetName(preset.name)).tag(preset.id)
                 }
             }
             Divider()
@@ -481,7 +481,7 @@ private struct MobileControlsForm: View {
             }
             .disabled(store.draft.presets.count == 1)
         } label: {
-            Label(store.editingPreset.name, systemImage: "chevron.up.chevron.down")
+            Label(chiakiLocalizedPresetName(store.editingPreset.name), systemImage: "chevron.up.chevron.down")
                 .labelStyle(MobileControlsTrailingIconLabel())
                 .lineLimit(1)
                 .frame(maxWidth: 160)

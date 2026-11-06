@@ -50,7 +50,7 @@ extension FocusButton where Label == Text {
     ///   - action: Runs when the button is activated.
     public init(_ titleKey: LocalizedStringKey, role: ButtonRole? = nil, action: @escaping () -> Void) {
         self.init(role: role, action: action) {
-            Text(titleKey)
+            Text(titleKey, bundle: .main)
         }
     }
 
@@ -62,7 +62,7 @@ extension FocusButton where Label == Text {
     ///   - action: Runs when the button is activated.
     public init<S: StringProtocol>(_ title: S, role: ButtonRole? = nil, action: @escaping () -> Void) {
         self.init(role: role, action: action) {
-            Text(title)
+            Text(verbatim: chiakiLocalized(String(title)))
         }
     }
 }
@@ -82,7 +82,11 @@ extension FocusButton where Label == SwiftUI.Label<Text, Image> {
         action: @escaping () -> Void
     ) {
         self.init(role: role, action: action) {
-            SwiftUI.Label(titleKey, systemImage: systemImage)
+            SwiftUI.Label {
+                Text(titleKey, bundle: .main)
+            } icon: {
+                Image(systemName: systemImage)
+            }
         }
     }
 
@@ -100,7 +104,11 @@ extension FocusButton where Label == SwiftUI.Label<Text, Image> {
         action: @escaping () -> Void
     ) {
         self.init(role: role, action: action) {
-            SwiftUI.Label(title, systemImage: systemImage)
+            SwiftUI.Label {
+                Text(verbatim: chiakiLocalized(String(title)))
+            } icon: {
+                Image(systemName: systemImage)
+            }
         }
     }
 }

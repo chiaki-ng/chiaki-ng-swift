@@ -4,8 +4,9 @@ import DesignSystem
 import MenuFocus
 import SwiftUI
 
-/// Where the library menu sits.
+/// App language and library menu position settings.
 public struct InterfaceSettingsView: View {
+    @AppStorage(AppLanguage.defaultsKey) private var appLanguage = AppLanguage.system.rawValue
     /// The persisted interface settings whose library menu edge is edited and saved.
     @Bindable public var store: StoreOf<PersistedSettingFeature<InterfaceSettings>>
 
@@ -18,7 +19,18 @@ public struct InterfaceSettingsView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Menu position").font(.headline)
+            SettingsRow(
+                "App Language",
+                detail: "Choose Follow System to use your device's preferred language."
+            ) {
+                Picker("App Language", selection: $appLanguage) {
+                    ForEach(AppLanguage.allCases) { language in
+                        languageLabel(language).tag(language.rawValue)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+            Text("Menu position").font(.callout)
             FocusableSegments(
                 options: LibraryRailEdge.allCases,
                 title: Self.title,
@@ -49,6 +61,18 @@ public struct InterfaceSettingsView: View {
             "Right"
         case .bottom:
             "Bottom"
+        }
+    }
+
+    @ViewBuilder
+    private func languageLabel(_ language: AppLanguage) -> some View {
+        switch language {
+        case .system:
+            Text(LocalizedStringKey("Follow System"))
+        case .english:
+            Text(LocalizedStringKey("English"))
+        case .simplifiedChinese:
+            Text(verbatim: "简体中文")
         }
     }
 }

@@ -413,7 +413,7 @@ private struct ControlsPresetPicker: View {
                 Text("Preset")
                 Picker("Preset", selection: selection) {
                     ForEach(store.draft.presets) {
-                        Text($0.name).tag($0.id)
+                        Text(chiakiLocalizedPresetName($0.name)).tag($0.id)
                     }
                 }
                 .labelsHidden()

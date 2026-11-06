@@ -87,6 +87,10 @@ if [[ "$platform" != macos ]]; then
         "${libraries[@]}" "$build_dir"/libSDL3.0.dylib
     exit 0
 fi
+if [[ "${CHIAKI_BUILD_ONLY:-0}" == 1 ]]; then
+    cmake --build "$build_dir" --target ChiakiInput ChiakiRegistration --parallel
+    exit 0
+fi
 core_tests=(public chiaki_ng default_platform)
 core_targets=("${core_tests[@]/#/api_}")
 core_targets=("${core_targets[@]/%/_gtests}")

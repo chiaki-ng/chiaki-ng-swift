@@ -67,6 +67,7 @@ help:
 	  'Options: CONFIGURATION=debug|release SWIFT=swift PYTHON=python3 TAG=name HEADLESS=1 DEPS_DATE=ddmmyy' \
 	  '         CHIAKI_KAKUSAN=1|0 builds Kakusan session sharing (default 0); 0 leaves it out of the core and app' \
 	  '         CHIAKI_PS5_CLOUD_LAUNCH=1|0 allows PS Cloud launches (default 0); 0 refuses them in the core and app, PS Now still launches' \
+	  '         CHIAKI_BUILD_ONLY=1 builds the macOS app core without running native core tests' \
 	  '         IOS_PLATFORM=ios-simulator|ios IOS_TARGETS="ChiakiCoreBridge ChiakiPersistence Video PlatformUI"'
 
 build: core swift-build

@@ -9,6 +9,7 @@ import SwiftUI
 /// The application's view: one screen for ``RootFeature/State/route`` with ``RootFeature/State/destination``
 /// presented over it.
 public struct RootView: View {
+    @AppStorage(AppLanguage.defaultsKey) private var appLanguage = AppLanguage.system.rawValue
     /// The root.
     let store: StoreOf<RootFeature>
 
@@ -96,6 +97,7 @@ public struct RootView: View {
         .environment(\.liveLogButtonShown, store.settings.logSettings.showLiveLogButton)
         .environment(\.quitControlShown, showsQuitControl)
         .environment(\.libraryRailEdge, railEdge)
+        .environment(\.locale, Locale(identifier: (AppLanguage(rawValue: appLanguage) ?? .system).localeIdentifier))
         .environment(\.streamerMode, store.settings.logSettings.streamerMode)
         .environment(\.topControlsLayout, topControlsLayout)
         .environment(\.streamMenuShortcut, store.settings.controls.configuration.streamMenuShortcut)

@@ -156,6 +156,7 @@ public struct SettingsLayout<Content: View>: View {
 
 /// The large title at the top of a settings page.
 public struct SettingsPageTitle: View {
+    @AppStorage(AppLanguage.defaultsKey) private var appLanguage = AppLanguage.system.rawValue
     @Environment(\.screenLayout) private var layout
     private let text: String
 
@@ -168,10 +169,12 @@ public struct SettingsPageTitle: View {
 
     /// The title.
     public var body: some View {
-        Text(text).font(
-            layout.isCompact
-                ? .title2.weight(.semibold)
-                : .largeTitle.weight(.semibold)
-        )
+        Text(text)
+            .id(appLanguage)
+            .font(
+                layout.isCompact
+                    ? .title2.weight(.semibold)
+                    : .largeTitle.weight(.semibold)
+            )
     }
 }

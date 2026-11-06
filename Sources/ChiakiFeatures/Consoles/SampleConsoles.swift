@@ -136,7 +136,8 @@ public struct SampleConsoleList: Equatable, RawRepresentable, Sendable {
     /// - Parameter index: The card's index.
     /// - Returns: The name.
     public func name(at index: Int) -> String {
-        "\(Self.rooms[index % Self.rooms.count]) \(consoles[index].model.title)"
+        let room = Self.rooms[index % Self.rooms.count]
+        return "\(chiakiLocalized("Sample console room: \(room)")) \(consoles[index].model.title)"
     }
 
     /// Adds a PS5 card with layered art, unless the list is full.
