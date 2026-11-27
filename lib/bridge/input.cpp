@@ -70,6 +70,7 @@ class InputThread {
   static constexpr std::size_t effect_size = 47;
   static constexpr std::size_t trigger_size = 22;
   static constexpr Sint32 idle_wait_ms = 100;
+  static constexpr Sint32 active_poll_ms = 8;
   static constexpr Sint32 trigger_poll_ms = 4;
   static constexpr Sint32 retry_wait_ms = 1;
   static constexpr std::uint64_t silence_flush_ms = 150;
@@ -132,8 +133,9 @@ class InputThread {
   void enter(Phase phase);
   void finish_pass();
   auto wait_bound() const -> Sint32;
+  void wait_next(Sint32 delay_ms);
   void wake();
-  void pump(const SDL_Event* first);
+  auto pump(const SDL_Event* first) -> bool;
   void handle(const SDL_Event& event);
   void refresh_all();
   void add_pad(SDL_JoystickID id);
@@ -159,8 +161,9 @@ class InputThread {
   std::atomic<int> settle_waiters_{};
   std::thread thread_;
 
-  std::atomic<Uint32> wake_event_{};
-  std::atomic<bool> wake_pending_{};
+  std::mutex wake_mutex_;
+  std::condition_variable wake_cv_;
+  bool woken_{};
 
   std::mutex queue_mutex_;
   nx_input_commands commands_{};
@@ -611,15 +614,23 @@ auto InputThread::waveform(std::uint32_t instance,
 }
 
 void InputThread::wake() {
-  const Uint32 type = wake_event_.load(std::memory_order_acquire);
-  if (type == 0 || wake_pending_.exchange(true, std::memory_order_acq_rel)) {
-    return;
+  {
+    const std::lock_guard lock(wake_mutex_);
+    woken_ = true;
   }
-  SDL_Event event{};
-  event.type = type;
-  if (!SDL_PushEvent(&event)) {
-    wake_pending_.store(false, std::memory_order_release);
+  wake_cv_.notify_one();
+}
+
+void InputThread::wait_next(Sint32 delay_ms) {
+  std::unique_lock lock(wake_mutex_);
+  if (!woken_ && delay_ms > 0 && phase_.load() == Phase::running &&
+      settle_waiters_.load() == 0) {
+    wake_cv_.wait_for(lock, std::chrono::milliseconds(delay_ms), [this] {
+      return woken_ || phase_.load() != Phase::running ||
+             settle_waiters_.load() > 0;
+    });
   }
+  woken_ = false;
 }
 
 void InputThread::raise_priority() {
@@ -645,10 +656,13 @@ auto InputThread::wait_bound() const -> Sint32 {
   if (settle_waiters_.load() > 0) {
     return 0;
   }
-  if (outgoing_ || wake_event_.load(std::memory_order_relaxed) == 0) {
+  if (outgoing_) {
     return retry_wait_ms;
   }
-  return dualsense_present_ ? trigger_poll_ms : idle_wait_ms;
+  if (dualsense_present_) {
+    return trigger_poll_ms;
+  }
+  return snapshot_count_ > 0 ? active_poll_ms : idle_wait_ms;
 }
 
 void InputThread::run() {
@@ -659,9 +673,6 @@ void InputThread::run() {
   SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
   SdlReady::mark();
   const bool ready = SDL_InitSubSystem(SDL_INIT_GAMEPAD);
-  if (ready) {
-    wake_event_.store(SDL_RegisterEvents(1), std::memory_order_release);
-  }
   enter(ready ? Phase::running : Phase::failed);
   if (!ready) {
     return;
@@ -669,24 +680,27 @@ void InputThread::run() {
   refresh_all();
   while (phase_.load() == Phase::running) {
     CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
+    SDL_PumpEvents();
     SDL_Event first;
-    const bool woke = SDL_WaitEventTimeout(&first, wait_bound());
-    wake_pending_.store(false, std::memory_order_release);
-    pump(woke ? &first : nullptr);
+    const bool has_event = SDL_PollEvent(&first);
+    const bool more_events = pump(has_event ? &first : nullptr);
     deliver_batch();
     perform_commands();
     pump_waveform();
     finish_pass();
+    if (!more_events) {
+      wait_next(wait_bound());
+    }
   }
   perform_commands();
-  wake_event_.store(0, std::memory_order_release);
   silence_all();
   SDL_QuitSubSystem(SDL_INIT_GAMEPAD);
 }
 
-void InputThread::pump(const SDL_Event* first) {
+auto InputThread::pump(const SDL_Event* first) -> bool {
   batch_count_ = 0;
   touched_count_ = 0;
+  bool more_events = false;
   if (first != nullptr) {
     handle(*first);
     SDL_Event event;
@@ -695,9 +709,11 @@ void InputThread::pump(const SDL_Event* first) {
       handle(event);
       ++processed;
     }
+    more_events = processed >= events_per_pass;
   }
   refresh_touched();
   publish_trigger_states();
+  return more_events;
 }
 
 void InputThread::handle(const SDL_Event& event) {
