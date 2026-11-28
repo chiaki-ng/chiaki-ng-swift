@@ -14,7 +14,7 @@
 
 ## License
 
-chiaki-ng is licensed under the GNU Affero General Public Licenseersion 3 or (at your option) any later version, with additional permissions for linking with OpenSSL and for distribution through application stores such as the Apple App Store. See [LICENSE](LICENSE).
+chiaki-ng is licensed under the GNU Affero General Public License version 3 or (at your option) any later version, with additional permissions granted to the chiaki-ng maintainers for linking with OpenSSL and for distribution through application stores such as the Apple App Store. See [LICENSE](LICENSE).
 
 
 ## Contributing
